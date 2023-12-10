@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Results Page</title>
+</head>
+<body>
+    <h1>Model Path</h1>
+    {% if pickle_path %}
+        <p>Path to Model: {{ pickle_path }}</p>
+    {% else %}
+        <p>No model path available</p>
+    {% endif %}
+
+    <h1>Download Excel File</h1>
+    <a href="{{ excel_file_url }}" download>Download Excel File</a>
+</body>
+</html>

@@ -1,9 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Обучение модели</title>
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block content %}
     <h1>Обучение модели</h1>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
@@ -11,5 +8,4 @@
 
         <input type="submit" value="Upload">
     </form>
-</body>
-</html>
+{% endblock %}

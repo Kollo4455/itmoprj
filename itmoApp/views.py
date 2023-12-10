@@ -2,11 +2,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from .forms import ModelForm, ModelSelectionForm
 
-
 # Create your views here.
 from .models import Pickle_model
 
-
+@login_required
 def upload_model(request):
     if request.method == 'POST':
         form = ModelForm(request.user, request.POST, request.FILES)
@@ -15,7 +14,11 @@ def upload_model(request):
             # Обработка после успешной загрузки
     else:
         form = ModelForm(request.user)
-    return render(request, 'upload_model.html', {'form': form})
+    return render(request, 'itmo/upload_model.html',
+                  {
+                      'form': form,
+                      'title': 'Обучение модели',
+                   })
 
 
 def error_404_view(request, exception):
@@ -40,9 +43,13 @@ def model_selection_view(request):
 
             # Ваш код обработки файла и модели
 
-            return render(request, 'results_page.html',
+            return render(request, 'itmo/results_page.html',
                           {'pickle_path': pickle_path})  # Передача pickle_path в шаблон результатов
     else:
         form = ModelSelectionForm(user=request.user)
 
-    return render(request, 'model_selection.html', {'form': form})
+    return render(request, 'itmo/model_selection.html',
+                  {
+                      'form': form,
+                      'title': 'Предсказание',
+                  })

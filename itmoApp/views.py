@@ -1,9 +1,13 @@
+import os
+
 from django.contrib.auth.decorators import login_required
+from django.http import FileResponse
 from django.shortcuts import render, redirect
 from .forms import ModelForm, ModelSelectionForm
 
 # Create your views here.
 from .models import Pickle_model
+
 
 @login_required
 def upload_model(request):
@@ -18,7 +22,7 @@ def upload_model(request):
                   {
                       'form': form,
                       'title': 'Обучение модели',
-                   })
+                  })
 
 
 def error_404_view(request, exception):
@@ -53,3 +57,19 @@ def model_selection_view(request):
                       'form': form,
                       'title': 'Предсказание',
                   })
+
+
+def guid_view(request):
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    filename = 'template.xlsx'
+    filepath = BASE_DIR + '/template/' + filename
+    with open(filepath, 'rb') as file:
+        return render(request, 'itmo/guid_page.html', {'filepath': file})
+
+
+def download(request):
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    filename = 'template.xlsx'
+    filepath = BASE_DIR + '/template/' + filename
+    response = FileResponse(open(filepath, 'rb'))
+    return response

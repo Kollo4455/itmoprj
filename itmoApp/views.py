@@ -1,7 +1,8 @@
 import os
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponse, Http404
 from django.shortcuts import render, redirect
 from .forms import ModelForm, ModelSelectionForm
 
@@ -64,12 +65,17 @@ def guid_view(request):
     filename = 'template.xlsx'
     filepath = BASE_DIR + '/template/' + filename
     with open(filepath, 'rb') as file:
-        return render(request, 'itmo/guid_page.html', {'filepath': file})
+        return render(request, 'itmo/guid_page.html')
 
 
-def download(request):
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    filename = 'template.xlsx'
-    filepath = BASE_DIR + '/template/' + filename
-    response = FileResponse(open(filepath, 'rb'))
-    return response
+def download_template(request):
+    # Путь к вашему файлу template.xlsx
+    file_path = os.path.join(settings.MEDIA_ROOT, 'template.xlsx')
+
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as file:
+            response = HttpResponse(file.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = 'attachment; filename="template.xlsx"'
+            return response
+    else:
+        return HttpResponse("File not found", status=404)

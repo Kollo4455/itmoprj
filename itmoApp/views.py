@@ -1,5 +1,7 @@
 import os
 
+import joblib
+import pandas as pd
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, HttpResponse, Http404
@@ -16,7 +18,6 @@ def upload_model(request):
         form = ModelForm(request.user, request.POST, request.FILES)
         if form.is_valid():
             newF = form.save(request.user)
-
 
             # Обработка после успешной загрузки
 
@@ -49,10 +50,13 @@ def model_selection_view(request):
             if selected_model:
                 pickle_path = selected_model.pickle.path if selected_model.pickle else None
 
-            # Ваш код обработки файла и модели
+            automl = joblib.load(pickle_path)
+            data = pd.read_csv(excel_file)
+            pred = automl.predict(data).data[:, 0]
 
             return render(request, 'itmo/results_page.html',
-                          {'pickle_path': pickle_path})  # Передача pickle_path в шаблон результатов
+                          {'pickle_path': pickle_path,
+                           'pred': pred})  # Передача pickle_path в шаблон результатов
     else:
         form = ModelSelectionForm(user=request.user)
 
@@ -77,7 +81,8 @@ def download_template(request):
 
     if os.path.exists(file_path):
         with open(file_path, 'rb') as file:
-            response = HttpResponse(file.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response = HttpResponse(file.read(),
+                                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             response['Content-Disposition'] = 'attachment; filename="template.xlsx"'
             return response
     else:

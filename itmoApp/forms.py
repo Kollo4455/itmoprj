@@ -100,7 +100,7 @@ class ModelForm(forms.ModelForm):
                 results.append((mse_usual, mse_full, mse_full - mse_usual))
 
             content = pickle.dumps(automl)
-            fid = ContentFile(content,name=f"pickle-{datetime.datetime.now()}")
+            fid = ContentFile(content,name=f"pickle-{datetime.datetime.now().strftime('%m-%d-%y %H-%M-%S')}.pkl")
             instance.pickle = fid
             fid.close()
 

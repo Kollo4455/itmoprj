@@ -4,6 +4,8 @@
     <h1>Model Path</h1>
     {% if pickle_path %}
         <p>Path to Model: {{ pickle_path }}</p>
+        <br>
+        <p>INFO <br> {{ pred }}</p>
     {% else %}
         <p>No model path available</p>
     {% endif %}

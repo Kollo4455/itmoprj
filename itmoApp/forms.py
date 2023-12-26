@@ -7,23 +7,17 @@ import pickle
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import os
-import time
-import re
-from sklearn.metrics import mean_squared_log_error
-from sklearn.model_selection import train_test_split
-import torch
-import matplotlib.pyplot as plt
 from lightautoml.automl.presets.tabular_presets import TabularAutoML, TabularUtilizedAutoML
 from lightautoml.tasks import Task
+from lightautoml.report.report_deco import ReportDeco
 from sklearn import ensemble
-from sklearn.inspection import permutation_importance
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score, median_absolute_error, mean_absolute_error, mean_squared_log_error, explained_variance_score
 from sklearn.model_selection import train_test_split
-from sklearn.datasets import load_diabetes
 
+
+
+def mean_absolute_percentage_error(y_true, y_pred):
+    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
 
 class ModelForm(forms.ModelForm):
     class Meta:
@@ -79,10 +73,11 @@ class ModelForm(forms.ModelForm):
             results = []
             rs_list = list(range(0, 2))
             for it, rs in enumerate(rs_list):
-                automl = TabularAutoML(task=task,
+                RD = ReportDeco(output_path='')
+                automl = RD(TabularAutoML(task=task,
                                        timeout=TIMEOUT,
                                        cpu_limit=N_THREADS,
-                                       reader_params={'n_jobs': N_THREADS, 'cv': N_FOLDS, 'random_state': rs})
+                                       reader_params={'n_jobs': N_THREADS, 'cv': N_FOLDS, 'random_state': rs}))
                 oof_pred = automl.fit_predict(X_train, roles=roles)
 
                 test_pred = automl.predict(X_test)
@@ -104,8 +99,23 @@ class ModelForm(forms.ModelForm):
             instance.pickle = fid
             fid.close()
 
+
+
             mse = mean_squared_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
             instance.mse = mse
+            r2 = r2_score(X_test['target'].values, automl.predict(X_test).data[:, 0])
+            instance.r2 = r2
+            median = median_absolute_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
+            instance.median = median
+            mean = mean_absolute_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
+            instance.mean = mean
+            msle = mean_squared_log_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
+            instance.msle = msle
+            evs = explained_variance_score(X_test['target'].values, automl.predict(X_test).data[:, 0])
+            instance.evs = evs
+            mape = mean_absolute_percentage_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
+            instance.mape = mape
+
 
         if commit:
             instance.save()

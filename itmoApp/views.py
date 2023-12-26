@@ -15,8 +15,11 @@ def upload_model(request):
     if request.method == 'POST':
         form = ModelForm(request.user, request.POST, request.FILES)
         if form.is_valid():
-            form.save(request.user)
+            newF = form.save(request.user)
+
+
             # Обработка после успешной загрузки
+
     else:
         form = ModelForm(request.user)
     return render(request, 'itmo/upload_model.html',

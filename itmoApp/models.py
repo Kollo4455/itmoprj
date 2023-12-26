@@ -5,13 +5,6 @@ from django.contrib.auth.models import User
 # Create your models here.
 
 
-class Metric(models.Model):
-    mse = models.CharField(max_length=100)
-    mspe = models.CharField(max_length=100)
-    mape = models.CharField(max_length=100)
-    rmse = models.CharField(max_length=100)
-    mae = models.CharField(max_length=100)
-    r2 = models.CharField(max_length=100)
 
 
 def user_directory_path(instance, filename):
@@ -24,7 +17,12 @@ class Pickle_model(models.Model):
     name = models.CharField(max_length=150)
     pickle = models.FileField(upload_to=user_directory_path)
     created_at = models.DateTimeField(auto_now_add=True)
-    metrics = models.ManyToManyField(Metric)
+    mse = models.CharField(max_length=100)
+    mspe = models.CharField(max_length=100)
+    mape = models.CharField(max_length=100)
+    rmse = models.CharField(max_length=100)
+    mae = models.CharField(max_length=100)
+    r2 = models.CharField(max_length=100)
 
     def __str__(self):
         return self.name

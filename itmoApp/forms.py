@@ -73,7 +73,7 @@ class ModelForm(forms.ModelForm):
             results = []
             rs_list = list(range(0, 2))
             for it, rs in enumerate(rs_list):
-                RD = ReportDeco(output_path='')
+                RD = ReportDeco(output_path='testRD')
                 automl = RD(TabularAutoML(task=task,
                                        timeout=TIMEOUT,
                                        cpu_limit=N_THREADS,

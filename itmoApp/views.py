@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, HttpResponse, Http404
 from django.shortcuts import render, redirect
 from .forms import ModelForm, ModelSelectionForm
+from django.contrib import messages
 
 # Create your views here.
 from .models import Pickle_model
@@ -17,7 +18,8 @@ def upload_model(request):
     if request.method == 'POST':
         form = ModelForm(request.user, request.POST, request.FILES)
         if form.is_valid():
-            newF = form.save(request.user)
+            form.save(request.user)
+            messages.success(request, f'Модель успешно обучена')
 
             # Обработка после успешной загрузки
 

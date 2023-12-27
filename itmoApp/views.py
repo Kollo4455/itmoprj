@@ -18,7 +18,8 @@ def upload_model(request):
     if request.method == 'POST':
         form = ModelForm(request.user, request.POST, request.FILES)
         if form.is_valid():
-            form.save(request.user)
+            name = form.cleaned_data.get('name')
+            form.save(request.user, name)
             messages.success(request, f'Модель успешно обучена')
 
             # Обработка после успешной загрузки

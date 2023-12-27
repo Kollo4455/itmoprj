@@ -31,7 +31,7 @@ class ModelForm(forms.ModelForm):
     def __init__(self,user, *args, **kwargs):
         super(ModelForm, self).__init__(*args, **kwargs)
 
-    def save(self, user, commit=True):
+    def save(self, user,name, commit=True):
         instance = super(ModelForm, self).save(commit=False)
         instance.user = user
 
@@ -73,7 +73,7 @@ class ModelForm(forms.ModelForm):
             results = []
             rs_list = list(range(0, 2))
             for it, rs in enumerate(rs_list):
-                RD = ReportDeco(output_path=f'itmoprj/testRD/{user}')
+                RD = ReportDeco(output_path=f'itmoprj/testRD/{user}/{name}')
                 automl = RD(TabularAutoML(task=task,
                                        timeout=TIMEOUT,
                                        cpu_limit=N_THREADS,

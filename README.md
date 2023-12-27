@@ -23,7 +23,7 @@ python itmoprj/manage.py createsuperuser
 ```bash
 python itmoprj/manage.py runserver
 ```
-## Ендпоинты
+## Эндпоинты
 
 * /app/predict (Предсказание)
 * /app/learn-model (Обучение модели)

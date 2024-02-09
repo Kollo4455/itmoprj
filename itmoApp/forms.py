@@ -7,12 +7,14 @@ import pickle
 
 import numpy as np
 import pandas as pd
-from lightautoml.automl.presets.tabular_presets import TabularAutoML, TabularUtilizedAutoML
-from lightautoml.tasks import Task
-from lightautoml.report.report_deco import ReportDeco
 from sklearn import ensemble
 from sklearn.metrics import mean_squared_error, r2_score, median_absolute_error, mean_absolute_error, mean_squared_log_error, explained_variance_score
 from sklearn.model_selection import train_test_split
+
+from fedot import Fedot
+from fedot.core.data.data import InputData
+from fedot.core.data.data_split import train_test_data_setup
+from fedot.core.repository.tasks import Task, TaskTypesEnum
 
 
 
@@ -41,79 +43,48 @@ class ModelForm(forms.ModelForm):
         if excel_file:
             # Обработка файла (ваш код)
             data = pd.read_csv(excel_file)
-            X_train, X_test = train_test_split(data, test_size=0.2, random_state=13)
 
-            params = {
-                "n_estimators": 500,
-                "max_depth": 4,
-                "min_samples_split": 5,
-                "learning_rate": 0.01,
-                "loss": "squared_error",
-            }
+            features_df = data.drop(axis=1, columns=['target'])
+            target_df = data['target']
 
-            reg = ensemble.GradientBoostingRegressor(**params)
-            reg.fit(X_train[X_train.columns[:-1]], X_train['target'])
+            data = InputData.from_dataframe(features_df,
+                                            target_df,
+                                            task=Task(TaskTypesEnum.regression))
+            train, test = train_test_data_setup(data)
 
-            mse = mean_squared_error(X_test['target'], reg.predict(X_test[X_test.columns[:-1]]))
+            SEED = 42
+            TIMEOUT = 5
+            PROBLEM = 'regression'
 
-            N_THREADS = 1  # threads cnt for lgbm and linear models
-            N_FOLDS = 2  # folds cnt for AutoML
-            # RANDOM_STATE = 42 # fixed random state for various reasons
-            # TEST_SIZE = 0.2 # Test size for metric check
-            TIMEOUT = 12  # Time in seconds for automl run
+            # По стандарту используються весь процессор для вычисления
+            # n_jobs (int) – num of n_jobs for parallelization (set to -1 to use all cpu’s). Defaults to -1
+            # https://fedot.readthedocs.io/en/latest/api/api.html
+            model = Fedot(problem=PROBLEM, seed=SEED, timeout=TIMEOUT)
+            best_pipeline = model.fit(features=train, target='target')
+            prediction = model.predict(features=test)
 
-            task = Task('reg', loss='mse', metric='mse')
 
-            roles = {
-                'target': 'target',
-                'drop': ['Id'],
-            }
 
-            cnt_trained = 0
-            results = []
-            rs_list = list(range(0, 2))
-            for it, rs in enumerate(rs_list):
-                RD = ReportDeco(output_path=f'itmoprj/testRD/{user}/{name}')
-                automl = RD(TabularAutoML(task=task,
-                                       timeout=TIMEOUT,
-                                       cpu_limit=N_THREADS,
-                                       reader_params={'n_jobs': N_THREADS, 'cv': N_FOLDS, 'random_state': rs}))
-                oof_pred = automl.fit_predict(X_train, roles=roles)
 
-                test_pred = automl.predict(X_test)
-                cnt_trained += 1
-
-                if it == 0:
-                    oof_pred_full = oof_pred.data[:, 0].copy()
-                    test_pred_full = test_pred.data[:, 0].copy()
-                else:
-                    oof_pred_full += oof_pred.data[:, 0]
-                    test_pred_full += test_pred.data[:, 0]
-
-                mse_usual = mean_squared_error(X_test['target'].values, test_pred.data[:, 0])
-                mse_full = mean_squared_error(X_test['target'].values, test_pred_full / cnt_trained)
-                results.append((mse_usual, mse_full, mse_full - mse_usual))
-
-            content = pickle.dumps(automl)
+            content = pickle.dumps(model)
             fid = ContentFile(content,name=f"pickle-{datetime.datetime.now().strftime('%m-%d-%y %H-%M-%S')}.pkl")
             instance.pickle = fid
             fid.close()
 
 
-
-            mse = mean_squared_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
+            mse = mean_squared_error(test.target, prediction)
             instance.mse = mse
-            r2 = r2_score(X_test['target'].values, automl.predict(X_test).data[:, 0])
+            r2 = r2_score(test.target, prediction)
             instance.r2 = r2
-            median = median_absolute_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
+            median = median_absolute_error(test.target, prediction)
             instance.median = median
-            mean = mean_absolute_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
+            mean = mean_absolute_error(test.target, prediction)
             instance.mean = mean
-            msle = mean_squared_log_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
+            msle = mean_squared_log_error(test.target, prediction)
             instance.msle = msle
-            evs = explained_variance_score(X_test['target'].values, automl.predict(X_test).data[:, 0])
+            evs = explained_variance_score(test.target, prediction)
             instance.evs = evs
-            mape = mean_absolute_percentage_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
+            mape = mean_absolute_percentage_error(test.target, prediction)
             instance.mape = mape
 
 

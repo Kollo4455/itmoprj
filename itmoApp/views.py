@@ -9,6 +9,10 @@ from django.shortcuts import render, redirect
 from .forms import ModelForm, ModelSelectionForm
 from django.contrib import messages
 
+from fedot.core.data.data import InputData
+from fedot.core.repository.tasks import Task, TaskTypesEnum
+
+
 # Create your views here.
 from .models import Pickle_model
 
@@ -53,9 +57,14 @@ def model_selection_view(request):
             if selected_model:
                 pickle_path = selected_model.pickle.path if selected_model.pickle else None
 
-            automl = joblib.load(pickle_path)
+            model = joblib.load(pickle_path)
             data = pd.read_csv(excel_file)
-            pred = automl.predict(data).data[:, 0]
+            features_df = data.drop(axis=1, columns=['target'])
+            target_df = data['target']
+            data = InputData.from_dataframe(features_df,
+                                            target_df,
+                                            task=Task(TaskTypesEnum.regression))
+            pred = model.predict(data)
 
             return render(request, 'itmo/results_page.html',
                           {'pickle_path': pickle_path,

@@ -1,7 +1,7 @@
 import datetime
 
 from django import forms
-from .models import Pickle_model
+from .models import PickleModel
 from django.core.files.base import ContentFile
 import pickle
 
@@ -11,30 +11,29 @@ from lightautoml.automl.presets.tabular_presets import TabularAutoML, TabularUti
 from lightautoml.tasks import Task
 from lightautoml.report.report_deco import ReportDeco
 from sklearn import ensemble
-from sklearn.metrics import mean_squared_error, r2_score, median_absolute_error, mean_absolute_error, mean_squared_log_error, explained_variance_score
+from sklearn.metrics import mean_squared_error, r2_score, median_absolute_error, mean_absolute_error, \
+    mean_squared_log_error, explained_variance_score
 from sklearn.model_selection import train_test_split
-
 
 
 def mean_absolute_percentage_error(y_true, y_pred):
     return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
 
+
 class ModelForm(forms.ModelForm):
     class Meta:
-        model = Pickle_model
+        model = PickleModel
         fields = ['name']  # Поля, которые будут отображаться в форме
 
     # Дополнительные поля для формы (не из модели)
     excel_file = forms.FileField(label='Upload Excel File')
 
-
-    def __init__(self,user, *args, **kwargs):
+    def __init__(self, user, *args, **kwargs):
         super(ModelForm, self).__init__(*args, **kwargs)
 
-    def save(self, user,name, commit=True):
+    def save(self, user, name, commit=True):
         instance = super(ModelForm, self).save(commit=False)
         instance.user = user
-
 
         # Обработка загруженного Excel файла
         excel_file = self.cleaned_data.get('excel_file')
@@ -54,8 +53,6 @@ class ModelForm(forms.ModelForm):
             reg = ensemble.GradientBoostingRegressor(**params)
             reg.fit(X_train[X_train.columns[:-1]], X_train['target'])
 
-            mse = mean_squared_error(X_test['target'], reg.predict(X_test[X_test.columns[:-1]]))
-
             N_THREADS = 1  # threads cnt for lgbm and linear models
             N_FOLDS = 2  # folds cnt for AutoML
             # RANDOM_STATE = 42 # fixed random state for various reasons
@@ -72,12 +69,17 @@ class ModelForm(forms.ModelForm):
             cnt_trained = 0
             results = []
             rs_list = list(range(0, 2))
+
+            oof_pred_full = None
+            test_pred_full = None
+            automl = None
+
             for it, rs in enumerate(rs_list):
                 RD = ReportDeco(output_path=f'itmoprj/testRD/{user}/{name}')
                 automl = RD(TabularAutoML(task=task,
-                                       timeout=TIMEOUT,
-                                       cpu_limit=N_THREADS,
-                                       reader_params={'n_jobs': N_THREADS, 'cv': N_FOLDS, 'random_state': rs}))
+                                          timeout=TIMEOUT,
+                                          cpu_limit=N_THREADS,
+                                          reader_params={'n_jobs': N_THREADS, 'cv': N_FOLDS, 'random_state': rs}))
                 oof_pred = automl.fit_predict(X_train, roles=roles)
 
                 test_pred = automl.predict(X_test)
@@ -95,27 +97,20 @@ class ModelForm(forms.ModelForm):
                 results.append((mse_usual, mse_full, mse_full - mse_usual))
 
             content = pickle.dumps(automl)
-            fid = ContentFile(content,name=f"pickle-{datetime.datetime.now().strftime('%m-%d-%y %H-%M-%S')}.pkl")
+            fid = ContentFile(content, name=f"pickle-{datetime.datetime.now().strftime('%m-%d-%y %H-%M-%S')}.pkl")
             instance.pickle = fid
             fid.close()
-
-
-
-            mse = mean_squared_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
-            instance.mse = mse
-            r2 = r2_score(X_test['target'].values, automl.predict(X_test).data[:, 0])
-            instance.r2 = r2
-            median = median_absolute_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
-            instance.median = median
-            mean = mean_absolute_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
-            instance.mean = mean
-            msle = mean_squared_log_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
-            instance.msle = msle
-            evs = explained_variance_score(X_test['target'].values, automl.predict(X_test).data[:, 0])
-            instance.evs = evs
-            mape = mean_absolute_percentage_error(X_test['target'].values, automl.predict(X_test).data[:, 0])
-            instance.mape = mape
-
+            metrics = [{'method': mean_squared_error, 'name': 'mse'}, {'method': r2_score, 'name': 'r2'},
+                       {'method': median_absolute_error, 'name': 'median'},
+                       {'method': mean_squared_log_error, 'name': 'msle'},
+                       {'method': explained_variance_score, 'name': 'evs'},
+                       {'method': mean_absolute_percentage_error, 'name': 'mape'}]
+            for metric in metrics:
+                setattr(
+                    instance,
+                    metric['name'],
+                    metric['method'](X_test['target'].values, automl.predict(X_test).data[:, 0])
+                )
 
         if commit:
             instance.save()
@@ -131,4 +126,4 @@ class ModelSelectionForm(forms.Form):
         user = kwargs.pop('user', None)
         super(ModelSelectionForm, self).__init__(*args, **kwargs)
         if user:
-            self.fields['user_models'].queryset = Pickle_model.objects.filter(user=user)
+            self.fields['user_models'].queryset = PickleModel.objects.filter(user=user)

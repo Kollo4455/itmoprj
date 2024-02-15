@@ -13,7 +13,7 @@ git clone https://github.com/Kollo4455/itmoprj
 3. Надо скачать mongoDB и установить его https://www.mongodb.com/try/download/community
 4. В открытой консоле с виртуальным окружением установить пакеты
 ```bash
-python install -r itmoprj/requirements.txt
+pip install -r itmoprj/requirements.txt
 ```
 5. После установки пакетов, надо сделать миграцию
 ```bash

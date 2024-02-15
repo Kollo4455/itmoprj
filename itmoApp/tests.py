@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
-from .models import Pickle_model
+from .models import PickleModel
 
 class PickleModelTest(TestCase):
     def setUp(self):
@@ -8,7 +8,7 @@ class PickleModelTest(TestCase):
         self.user = User.objects.create(username='testuser')
 
         # Создаем объект Pickle_model для тестирования
-        self.pickle_model = Pickle_model.objects.create(
+        self.pickle_model = PickleModel.objects.create(
             user=self.user,
             name='Test Pickle',
             pickle='path/to/test/pickle',

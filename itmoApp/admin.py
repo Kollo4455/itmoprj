@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import Pickle_model
+from .models import PickleModel
 
 # Register your models here.
 
-admin.site.register([Pickle_model])
+admin.site.register([PickleModel])

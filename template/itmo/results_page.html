@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>Model Path</h1>
+    <h1>Путь модели</h1>
     {% if pickle_path %}
-        <p>Path to Model: {{ pickle_path }}</p>
+        <p>Путь до модели: {{ pickle_path }}</p>
         <br>
-        <p>INFO <br> {{ pred }}</p>
+        <p>ИНФО <br> {{ pred }}</p>
     {% else %}
-        <p>No model path available</p>
+        <p>Нет пути до модели</p>
     {% endif %}
 
     <h1>Download Excel File</h1>
-    <a href="itmoprj\template\template.xlsx" download>Download Excel File</a>
+    <a href="itmoprj\template\template.xlsx" download>Скачать Excel Файл</a>
 {% endblock %}

@@ -5,7 +5,6 @@ import itmoApp.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('itmoApp', '0002_alter_pickle_model_pickle'),
     ]

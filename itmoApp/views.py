@@ -10,7 +10,7 @@ from .forms import ModelForm, ModelSelectionForm
 from django.contrib import messages
 
 # Create your views here.
-from .models import Pickle_model
+from .models import PickleModel
 
 
 @login_required
@@ -33,8 +33,22 @@ def upload_model(request):
                   })
 
 
-def error_404_view(request, exception):
+def error_404_view(request):
     return render(request, '404.html', {})
+
+
+def process_form(pickle_path, form):
+    # Обработка формы при отправке
+    excel_file = form.cleaned_data['excel_file']
+    user_models = form.cleaned_data['user_models']
+
+    # Получение пути до пикл файла выбранной модели, если модель выбрана
+    if user_models:
+        pickle_path = user_models.pickle.path if user_models.pickle else None
+
+    automl = joblib.load(pickle_path)
+    data = pd.read_csv(excel_file)
+    return automl.predict(data).data[:, 0]
 
 
 @login_required
@@ -44,19 +58,7 @@ def model_selection_view(request):
     if request.method == 'POST':
         form = ModelSelectionForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
-            # Обработка формы при отправке
-            excel_file = form.cleaned_data['excel_file']
-            user_models = form.cleaned_data['user_models']
-
-            # Получение пути до пикл файла выбранной модели, если модель выбрана
-            selected_model = user_models
-            if selected_model:
-                pickle_path = selected_model.pickle.path if selected_model.pickle else None
-
-            automl = joblib.load(pickle_path)
-            data = pd.read_csv(excel_file)
-            pred = automl.predict(data).data[:, 0]
-
+            pred = process_form(pickle_path, form)
             return render(request, 'itmo/results_page.html',
                           {'pickle_path': pickle_path,
                            'pred': pred})  # Передача pickle_path в шаблон результатов
@@ -71,11 +73,7 @@ def model_selection_view(request):
 
 
 def guid_view(request):
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    filename = 'template.xlsx'
-    filepath = BASE_DIR + '/template/' + filename
-    with open(filepath, 'rb') as file:
-        return render(request, 'itmo/guid_page.html')
+    return render(request, 'itmo/guid_page.html')
 
 
 def download_template(request):
